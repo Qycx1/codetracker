@@ -11,6 +11,7 @@ import com.io.kira.application.auth.port.out.OAuthGithubUrlBuilderPort;
 import com.io.kira.application.auth.result.GithubOAuthSignInData;
 import com.io.kira.application.auth.result.OAuthGithubCallbackResult;
 import com.io.kira.common.result.Result;
+import com.io.kira.infrastructure.auth.config.CorsConfig;
 import com.io.kira.infrastructure.auth.config.properties.DeviceIdCookieProperties;
 import com.io.kira.infrastructure.auth.config.properties.JwtCookieProperties;
 import com.io.kira.infrastructure.auth.config.properties.RefreshCookieProperties;
@@ -52,7 +53,7 @@ public class GithubController {
             OAuthGithubCallbackUseCase oAuthGithubCallbackUseCase,
             OAuthGithubSignInUseCase oAuthGithubSignInUseCase,
             OAuthGithubUrlBuilderPort oAuthGithubUrlBuilderPort,
-            @Value("${app.cors.allowed-origins}") String frontendOrigin,
+            @Value("${app.frontend-origin}") String frontendOrigin,
             @Value("${jwt.expiration.ms}") int JWT_COOKIE_MAX_AGE_IN_MS,
             @Value("${refresh.token.lifetime.hour}") long REFRESH_TOKEN_MAX_LIFE_TIME_IN_HOUR,
             @Value("${device.expiration.week}") long DEVICE_COOKIE_MAX_AGE_IN_WEEK,
@@ -64,6 +65,7 @@ public class GithubController {
         this.oAuthGithubCallbackUseCase = oAuthGithubCallbackUseCase;
         this.oAuthGithubSignInUseCase = oAuthGithubSignInUseCase;
         this.oAuthGithubUrlBuilderPort = oAuthGithubUrlBuilderPort;
+        CorsConfig.validateOrigin(frontendOrigin);
         this.frontendOrigin = frontendOrigin;
         this.JWT_COOKIE_MAX_AGE_IN_MS = JWT_COOKIE_MAX_AGE_IN_MS;
         this.REFRESH_TOKEN_MAX_LIFE_TIME_IN_HOUR = REFRESH_TOKEN_MAX_LIFE_TIME_IN_HOUR;

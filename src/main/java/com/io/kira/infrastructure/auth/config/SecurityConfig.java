@@ -4,6 +4,7 @@ package com.io.kira.infrastructure.auth.config;
 import com.io.kira.adapter.auth.out.security.BCryptPasswordHasher;
 import com.io.kira.infrastructure.auth.filter.JwtFilter;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,13 +24,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-        private final UserDetailsService userDetailsService;
-        private final JwtFilter jwtFilter;
+    private final UserDetailsService userDetailsService;
+    private final JwtFilter jwtFilter;
 
-        public SecurityConfig (UserDetailsService userDetailsService, JwtFilter jwtFilter) {
-            this.userDetailsService = userDetailsService;
-            this.jwtFilter = jwtFilter;
-        }
+    public SecurityConfig(UserDetailsService userDetailsService, JwtFilter jwtFilter) {
+        this.userDetailsService = userDetailsService;
+        this.jwtFilter = jwtFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -47,17 +48,20 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         }))
                 .authorizeHttpRequests(auth -> auth
+                        // Preserve real HTTP errors during internal error dispatches.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/api/oauth/github/authorize",
                                 "/api/oauth/github/callback",
                                 "/api/auth/check",
-                                "/api/auth/refresh/**"
+                                "/api/auth/refresh", "/api/auth/refresh/**",
+                                "/api/auth/logout", "/api/auth/logout/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -72,7 +76,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider () {
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider dao = new DaoAuthenticationProvider(userDetailsService);
         dao.setPasswordEncoder(bCryptPasswordEncoder());
         return dao;
