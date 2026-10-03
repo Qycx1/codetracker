@@ -37,30 +37,31 @@ spring:
       max-request-size: 10MB
 
 app:
+  frontend-origin: ${FRONTEND_ORIGIN:${CORS_ALLOWED_ORIGINS}}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
   cookie:
     jwt:
-      secure: ${APP_COOKIE_JWT_SECURE}
+      secure: ${APP_COOKIE_JWT_SECURE:true}
       http-only: true
       domain: ${APP_COOKIE_DOMAIN:}
       path: /
-      same-site: ${APP_COOKIE_SAME_SITE}
+      same-site: ${APP_COOKIE_SAME_SITE:None}
 
     refresh:
-      secure: ${APP_COOKIE_REFRESH_SECURE}
+      secure: ${APP_COOKIE_REFRESH_SECURE:true}
       http-only: true
       domain: ${APP_COOKIE_DOMAIN:}
       path: /
-      same-site: ${APP_COOKIE_SAME_SITE}
+      same-site: ${APP_COOKIE_SAME_SITE:None}
 
     device:
-      secure: ${APP_COOKIE_DEVICE_SECURE}
+      secure: ${APP_COOKIE_DEVICE_SECURE:true}
       http-only: false
       domain: ${APP_COOKIE_DOMAIN:}
       path: /
-      same-site: ${APP_COOKIE_SAME_SITE}
+      same-site: ${APP_COOKIE_SAME_SITE:None}
 
 github:
   authorization-url: "https://github.com/login/oauth/authorize"

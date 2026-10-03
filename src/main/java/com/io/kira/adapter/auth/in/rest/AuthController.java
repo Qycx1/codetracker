@@ -57,12 +57,15 @@ public class AuthController {
         ));
     }
 
-    @PostMapping("/logout/{deviceId}")
+    @PostMapping({"/logout", "/logout/{deviceId}"})
     public ResponseEntity<String> logout(
-            @PathVariable String deviceId,
+            @PathVariable(required = false) String deviceId,
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        if (deviceId == null || deviceId.isBlank()) {
+            deviceId = getCookieValue(request, "device_id");
+        }
         String refreshToken = getCookieValue(request, "refresh_token");
         LogoutResult result = logoutUseCase.execute(new LogoutCommand(deviceId, refreshToken));
 
