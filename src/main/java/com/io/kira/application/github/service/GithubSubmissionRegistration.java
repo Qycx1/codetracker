@@ -10,12 +10,14 @@ import com.io.kira.application.github.result.GithubSubmissionData;
 import com.io.kira.common.result.Result;
 import com.io.kira.domain.github.entity.GithubSubmission;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class GithubSubmissionRegistration implements CreateGithubSubmissionUseCase {
 
     private final GithubSubmissionAppRepository githubSubmissionAppRepository;
@@ -45,6 +47,7 @@ public class GithubSubmissionRegistration implements CreateGithubSubmissionUseCa
             GithubSubmission savedGithubSubmission = githubSubmissionAppRepository.save(githubSubmission);
             return Result.ok(GithubSubmissionData.from(savedGithubSubmission));
         } catch (RuntimeException e) {
+            log.error("Could not save GitHub attachment for student activity {}", command.studentActivityId(), e);
             return Result.fail(CreateGithubSubmissionError.SAVE_FAILED);
         }
     }

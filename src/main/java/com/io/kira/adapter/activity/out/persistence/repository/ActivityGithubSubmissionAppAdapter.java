@@ -12,6 +12,7 @@ import com.io.kira.infrastructure.activity.persistence.repository.JpaStudentActi
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -24,11 +25,12 @@ public class ActivityGithubSubmissionAppAdapter implements ActivityGithubSubmiss
     private final JpaActivityRepository jpaActivityRepository;
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = ActivityCacheNames.ACTIVITY,
             key = "@activityCacheKey.unsubmittedRepositoryActivityByClassroomIdAndUserId(#classroomId, #userId)",
             unless = "#result.isEmpty()")
     public List<ActivityDetailsData> getUnsubmittedRepositoryActivity(UUID classroomId, UUID userId) {
-        Set<String> submittedActivityIds = jpaStudentActivityRepository.findActivityIdsByClassroomIdAndUserId(classroomId,userId);
+        Set<UUID> submittedActivityIds = jpaStudentActivityRepository.findActivityIdsByClassroomIdAndUserId(classroomId, userId);
 
         List<ActivityEntity> activityEntityList = jpaActivityRepository.findActivitiesByClassroomId(classroomId);
 
@@ -42,4 +44,3 @@ public class ActivityGithubSubmissionAppAdapter implements ActivityGithubSubmiss
                 .toList();
     }
 }
-

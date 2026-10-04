@@ -10,7 +10,9 @@ import com.io.kira.application.activity.result.StudentActivitySubmissionData;
 import com.io.kira.common.result.Result;
 import com.io.kira.domain.activity.entity.StudentActivity;
 import com.io.kira.domain.auth.entity.GithubAccount;
+import com.io.kira.domain.activity.valueObject.SubmissionStatus;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,6 +20,7 @@ import java.util.UUID;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class SubmitTrackedActivityService implements SubmitTrackedActivityUseCase {
 
     private final StudentActivityAppRepository studentActivityAppRepository;
@@ -44,6 +47,8 @@ public class SubmitTrackedActivityService implements SubmitTrackedActivityUseCas
             return Result.fail(SubmitActivityError.REPOSITORY_SUBMISSION_NOT_FOUND);
 
         StudentActivity studentActivity = studentActivityOptional.get();
+        if (studentActivity.getSubmissionStatus() != SubmissionStatus.PENDING)
+            return Result.fail(SubmitActivityError.ALREADY_SUBMITTED);
 
         Optional<String> repositoryUrl = studentActivityAppRepository.findRepositoryUrlByUserIdAndActivityId(userId, activityId);
         if (repositoryUrl.isEmpty())
@@ -51,7 +56,7 @@ public class SubmitTrackedActivityService implements SubmitTrackedActivityUseCas
 
         Optional<GithubAccount> githubAccount = activityGithubAccountAppPort.findByAuthId(authId);
         if (githubAccount.isEmpty())
-            return Result.fail(SubmitActivityError.COMMIT_NOT_FOUND);
+            return Result.fail(SubmitActivityError.GITHUB_ACCOUNT_NOT_FOUND);
 
         Optional<String> commitSha = githubActivityIntegrationPort.findLatestCommitSha(
                 githubAccount.get().getAccessToken(), repositoryUrl.get());
@@ -68,6 +73,7 @@ public class SubmitTrackedActivityService implements SubmitTrackedActivityUseCas
             StudentActivity savedStudentActivity = studentActivityAppRepository.save(studentActivity);
             return Result.ok(StudentActivitySubmissionData.from(savedStudentActivity));
         } catch (RuntimeException e) {
+            log.error("Could not submit activity {} for user {}", activityId, userId, e);
             return Result.fail(SubmitActivityError.SAVE_FAILED);
         }
     }
