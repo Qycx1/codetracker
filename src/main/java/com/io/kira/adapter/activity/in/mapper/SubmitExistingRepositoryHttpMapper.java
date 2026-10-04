@@ -14,7 +14,7 @@ public final class SubmitExistingRepositoryHttpMapper {
                  GITHUB_ACCOUNT_NOT_FOUND,
                  CLASSROOM_NOT_FOUND,
                  REPOSITORY_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case USER_NOT_CLASSROOM_STUDENT -> HttpStatus.UNAUTHORIZED;
+            case USER_NOT_CLASSROOM_STUDENT -> HttpStatus.FORBIDDEN;
             case ALREADY_SUBMITTED -> HttpStatus.CONFLICT;
             case SAVE_FAILED -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
@@ -25,7 +25,7 @@ public final class SubmitExistingRepositoryHttpMapper {
             case USER_NOT_FOUND -> "User not found";
             case USER_NOT_CLASSROOM_STUDENT -> "User is not an active student of this classroom";
             case ACTIVITY_NOT_FOUND -> "Activity not found in this classroom";
-            case ALREADY_SUBMITTED -> "Activity already submitted";
+            case ALREADY_SUBMITTED -> "A repository is already attached. Find this activity in Tracked Activities";
             case GITHUB_ACCOUNT_NOT_FOUND -> "Github account not found";
             case REPOSITORY_NOT_FOUND -> "Repository not found";
             case SAVE_FAILED -> "Failed to save submission";

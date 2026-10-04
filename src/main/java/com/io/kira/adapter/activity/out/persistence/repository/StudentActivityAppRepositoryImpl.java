@@ -4,6 +4,7 @@ import com.io.kira.adapter.activity.out.cache.ActivityCacheNames;
 import com.io.kira.adapter.activity.out.persistence.mapper.StudentActivityMapper;
 import com.io.kira.application.activity.port.out.StudentActivityAppRepository;
 import com.io.kira.domain.activity.entity.StudentActivity;
+import com.io.kira.domain.activity.valueObject.SubmissionStatus;
 import com.io.kira.infrastructure.activity.persistence.entity.ActivityEntity;
 import com.io.kira.infrastructure.activity.persistence.entity.StudentActivityEntity;
 import com.io.kira.infrastructure.activity.persistence.repository.JpaActivityRepository;
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,7 +32,7 @@ public class StudentActivityAppRepositoryImpl implements StudentActivityAppRepos
 
     @Override
     public boolean existsSubmission(UUID userId, UUID activityId) {
-        return jpaStudentActivityRepository.existsByUserEntity_UserIdAndActivityEntity_ActivityId(userId, activityId);
+        return jpaStudentActivityRepository.existsByUserEntity_UserIdAndActivityEntity_ActivityIdAndGithubSubmissionIsNotNull(userId, activityId);
     }
 
     @Override
@@ -38,16 +41,20 @@ public class StudentActivityAppRepositoryImpl implements StudentActivityAppRepos
     }
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = ActivityCacheNames.STUDENT_ACTIVITY,
-            key = "@studentActivityCacheKey.byUserIdAndActivityId(#userId, #activityId)")
+            key = "@studentActivityCacheKey.byUserIdAndActivityId(#userId, #activityId)",
+            unless = "#result == null")
     public Optional<StudentActivity> findByUserIdAndActivityId(UUID userId, UUID activityId) {
         return jpaStudentActivityRepository.findByUserEntity_UserIdAndActivityEntity_ActivityId(userId, activityId)
                 .map(StudentActivityMapper::toDomain);
     }
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = ActivityCacheNames.STUDENT_ACTIVITY,
-            key = "@studentActivityCacheKey.repositoryUrlByUserIdAndActivityId(#userId, #activityId)")
+            key = "@studentActivityCacheKey.repositoryUrlByUserIdAndActivityId(#userId, #activityId)",
+            unless = "#result == null")
     public Optional<String> findRepositoryUrlByUserIdAndActivityId(UUID userId, UUID activityId) {
         return jpaStudentActivityRepository.findByUserEntity_UserIdAndActivityEntity_ActivityId(userId, activityId)
                 .map(StudentActivityEntity::getGithubSubmission)
@@ -55,6 +62,7 @@ public class StudentActivityAppRepositoryImpl implements StudentActivityAppRepos
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = ActivityCacheNames.STUDENT_ACTIVITY,
                     key = "@studentActivityCacheKey.byUserIdAndActivityId(#studentActivity.userId, #studentActivity.activityId)"),
@@ -69,7 +77,19 @@ public class StudentActivityAppRepositoryImpl implements StudentActivityAppRepos
         UserEntity userEntity = jpaUserRepository.findById(studentActivity.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + studentActivity.getUserId()));
         StudentActivityEntity entity = jpaStudentActivityRepository.findById(studentActivity.getStudentActivityId())
-                .orElseThrow(() -> new IllegalArgumentException("Student activity not found: " + studentActivity.getStudentActivityId()));
+                .orElseGet(() -> {
+                    StudentActivityEntity created = new StudentActivityEntity();
+                    created.setStudentActivityId(studentActivity.getStudentActivityId());
+                    return created;
+                });
+
+        // Attaching a repository is PENDING. The submission time belongs to the
+        // later transition that captures the student's finished commit.
+        if (studentActivity.getSubmissionStatus() == SubmissionStatus.SUBMITTED
+                && entity.getSubmissionStatus() != SubmissionStatus.SUBMITTED
+                && entity.getGithubSubmission() != null) {
+            entity.getGithubSubmission().setSubmittedAt(Instant.now());
+        }
 
         entity.setActivityEntity(activityEntity);
         entity.setUserEntity(userEntity);
@@ -82,4 +102,3 @@ public class StudentActivityAppRepositoryImpl implements StudentActivityAppRepos
         return StudentActivityMapper.toDomain(savedEntity);
     }
 }
-

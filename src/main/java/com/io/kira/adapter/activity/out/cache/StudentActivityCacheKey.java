@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component;
 @Component("studentActivityCacheKey")
 public final class StudentActivityCacheKey {
 
-    public String byUserIdAndActivityId(UUID userId, String activityId) {
+    public String byUserIdAndActivityId(UUID userId, UUID activityId) {
         return "by-user-id-and-activity-id:" + userId + ":" + activityId;
     }
 
-    public String repositoryUrlByUserIdAndActivityId(UUID userId, String activityId) {
+    public String repositoryUrlByUserIdAndActivityId(UUID userId, UUID activityId) {
         return "repository-url-by-user-id-and-activity-id:" + userId + ":" + activityId;
     }
 }

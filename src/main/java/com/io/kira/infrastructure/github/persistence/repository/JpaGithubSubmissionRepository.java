@@ -12,25 +12,27 @@ import java.util.UUID;
 
 public interface JpaGithubSubmissionRepository extends JpaRepository<GithubSubmissionEntity, Long> {
 
-		@Query("""
-						SELECT new com.io.kira.application.classroom.result.ClassroomRepositorySubmissionData(
-								u.userId,
-								u.firstName,
-								u.lastName,
-								u.profileUrl,
-								a.activityId,
-								a.title,
-								gs.repositoryName,
-								gs.repositoryUrl,
-								gs.submittedAt
-						)
-						FROM GithubSubmissionEntity gs
-						JOIN gs.studentActivity sa
-						JOIN sa.userEntity u
-						JOIN sa.activityEntity a
-						WHERE a.classroomEntity.classroomId = :classroomId
-							AND gs.submittedAt IS NOT NULL
-						ORDER BY gs.submittedAt DESC
-						""")
-		List<ClassroomRepositorySubmissionData> findRecentRepositorySubmissionsByClassroomId(@Param("classroomId") UUID classroomId, Pageable pageable);
+    // The feed records repository attachment. Final work submission has its own
+    // submittedAt, which is null while the attached activity is still PENDING.
+    @Query("""
+            SELECT new com.io.kira.application.classroom.result.ClassroomRepositorySubmissionData(
+                u.userId,
+                u.firstName,
+                u.lastName,
+                u.profileUrl,
+                a.activityId,
+                a.title,
+                gs.repositoryName,
+                gs.repositoryUrl,
+                gs.createdAt
+            )
+            FROM GithubSubmissionEntity gs
+            JOIN gs.studentActivity sa
+            JOIN sa.userEntity u
+            JOIN sa.activityEntity a
+            WHERE a.classroomEntity.classroomId = :classroomId
+            ORDER BY gs.createdAt DESC
+            """)
+    List<ClassroomRepositorySubmissionData> findRecentRepositorySubmissionsByClassroomId(
+            @Param("classroomId") UUID classroomId, Pageable pageable);
 }

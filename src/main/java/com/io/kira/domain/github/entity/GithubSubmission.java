@@ -32,7 +32,7 @@ public class GithubSubmission {
     public static GithubSubmission createNew(UUID classroomId, UUID studentActivityId, UUID activityId, String repositoryOwnerUsername, String repositoryId, String repositoryName, GithubSubmissionMode mode, String repositoryUrl) {
         return new GithubSubmission
                 (classroomId, studentActivityId, activityId,
-                repositoryOwnerUsername, repositoryId, repositoryName, mode, repositoryUrl, Instant.now());
+                repositoryOwnerUsername, repositoryId, repositoryName, mode, repositoryUrl, null);
     }
 
     public UUID getClassroomId() {
