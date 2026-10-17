@@ -8,6 +8,7 @@ import com.io.kira.application.chatbot.error.ChatbotError;
 import com.io.kira.application.chatbot.port.in.ChatbotUseCase;
 import com.io.kira.application.chatbot.result.ChatbotReplyData;
 import com.io.kira.common.result.Result;
+import com.io.kira.application.chatbot.service.ChatbotConversationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChatbotController {
 
     private final ChatbotUseCase chatbotUseCase;
+    private final ChatbotConversationService conversations;
 
-    public ChatbotController(ChatbotUseCase chatbotUseCase) {
+    public ChatbotController(ChatbotUseCase chatbotUseCase, ChatbotConversationService conversations) {
         this.chatbotUseCase = chatbotUseCase;
+        this.conversations = conversations;
     }
 
     @PostMapping
@@ -37,7 +40,10 @@ public class ChatbotController {
                     .body(ChatbotResponse.fail("You must be logged in to use Echo."));
         }
 
-        Result<ChatbotReplyData, ChatbotError> result = chatbotUseCase.execute(
+        Result<ChatbotReplyData, ChatbotError> result = request.threadId() != null ? conversations.reply(
+                principal.getUserId(), request.threadId(), request.requestId() == null ? java.util.UUID.randomUUID() : request.requestId(),
+                request.message().trim(), request.classroomId(), request.timezone()
+        ) : chatbotUseCase.execute(
                 new ChatbotCommand(
                         principal.getUserId(),
                         request.message().trim(),
@@ -48,7 +54,7 @@ public class ChatbotController {
         );
 
         if (result.success()) {
-            return ResponseEntity.ok(ChatbotResponse.success(result.data().reply()));
+            return ResponseEntity.ok(ChatbotResponse.success(result.data().reply(), request.threadId()));
         }
 
         return switch (result.error()) {

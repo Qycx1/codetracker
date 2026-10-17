@@ -15,6 +15,11 @@ public record ChatbotRequest(
         String message,
         UUID classroomId,
         @Size(max = 10) List<@NotNull @Valid ChatbotTurn> history,
-        @Size(max = 64) String timezone
+        @Size(max = 64) String timezone,
+        UUID threadId,
+        UUID requestId
 ) {
+    public ChatbotRequest(String message, UUID classroomId, List<ChatbotTurn> history, String timezone) {
+        this(message, classroomId, history, timezone, null, null);
+    }
 }
